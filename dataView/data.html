@@ -1,0 +1,166 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>新浪微博用户地理分布</title>
+<link rel="stylesheet" type="text/css" href="main.css" />
+ 
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript" src="raphael.js"></script>
+<script type="text/javascript" src="stasticData.js"></script>
+<script type="text/javascript" src="chinamapPath.js"></script>
+</head>
+
+<body>
+
+<style type="text/css">
+     #tips div{
+         width: 10px;
+     height: 10px;
+     }
+    </style>
+ 
+
+<div id="map"></div>
+
+<div id="tips">
+</div>
+<script type="text/javascript">
+
+
+
+$(function(){
+
+    var userCntArray = [];
+    for(var i=0; i< vUserCnt.length;i++){
+        userCntArray.push(vUserCnt[i].value);
+    }
+
+    var minCnt = Math.min.apply(null,userCntArray);
+    var maxCnt = Math.max.apply(null,userCntArray);
+    var step = Math.ceil((maxCnt - minCnt) / 6);
+
+    function getProvinceUCnt(proviName){
+        for(var i=0; i< vUserCnt.length;i++) {
+           if(vUserCnt[i]._id == proviName){
+             return vUserCnt[i].value
+           }
+        }
+
+        return -1;
+    }
+
+    function getColorIndex(proviName){
+        var cnt = getProvinceUCnt(proviName);
+        var initCnt = minCnt;
+        var nIndex = -1;
+
+        while(cnt >= initCnt){
+            nIndex++;
+            initCnt += step;
+        }
+
+        return nIndex > 6 ? 6 : nIndex;
+    }
+
+	var colors = ["#FFF4C1","#FFE66F","#FFD306","#FFD2D2","#ff7575","#FF0000"];
+
+    for(var i = 0; i < colors.length; i ++){
+        var regionData = (minCnt + step * (i)) + "-" + ( minCnt + step * (i+1));
+        $('#tips').append("<div style=background-color:" + colors[i] + "></div><span>" +regionData+ "</span>" )
+    }
+
+    var R = Raphael("map", 600, 500);
+	
+	//调用绘制地图方法
+    paintMap(R);
+	
+	var textAttr = {
+        "fill": "#000",
+        "font-size": "12px",
+        "cursor": "pointer"
+    };
+			
+    var i=0;
+    for (var state in china) {
+		china[state]['path'].color = Raphael.getColor(0.9);
+        (function (st, state) {
+			
+			//获取当前图形的中心坐标
+            var xx = st.getBBox().x + (st.getBBox().width / 2);
+            var yy = st.getBBox().y + (st.getBBox().height / 2);
+			
+            //***修改部分地图文字偏移坐标
+            switch (china[state]['name']) {
+                case "江苏":
+                    xx += 5;
+                    yy -= 10;
+                    break;
+                case "河北":
+                    xx -= 10;
+                    yy += 20;
+                    break;
+                case "天津":
+                    xx += 10;
+                    yy += 10;
+                    break;
+                case "上海":
+                    xx += 10;
+                    break;
+                case "广东":
+                    yy -= 10;
+                    break;
+                case "澳门":
+                    yy += 10;
+                    break;
+                case "香港":
+                    xx += 20;
+                    yy += 5;
+                    break;
+                case "甘肃":
+                    xx -= 40;
+                    yy -= 30;
+                    break;
+                case "陕西":
+                    xx += 5;
+                    yy += 10;
+                    break;
+                case "内蒙古":
+                    xx -= 15;
+                    yy += 65;
+                    break;
+                default:
+            }
+			//写入文字
+            var stateName = china[state]['name'];
+			china[state]['text'] = R.text(xx, yy, stateName).attr(textAttr);
+			var fillcolor = colors[getColorIndex(stateName)];
+			
+			st.attr({fill:fillcolor});//填充背景色
+			
+			st[0].onmouseover = function () {
+                st.animate({fill: "#fdd", stroke: "#eee"}, 500);
+				china[state]['text'].toFront();
+                R.safari();
+            };
+            st[0].onmouseout = function () {
+                st.animate({fill: fillcolor, stroke: "#eee"}, 500);
+				china[state]['text'].toFront();
+                R.safari();
+            };
+					
+         })(china[state]['path'], state);
+		 i++;
+}
+});
+
+function string2Array(string) { 
+	eval("var result = " + decodeURI(string)); 
+	return result; 
+}
+		
+
+</script>
+
+</body>
+</html>
